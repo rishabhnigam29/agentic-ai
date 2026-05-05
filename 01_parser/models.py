@@ -1,5 +1,5 @@
 from enum import Enum
-from Pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 class Intent(str, Enum):
     SALES = "Sales"
@@ -14,7 +14,7 @@ class CRMEntry(BaseModel):
     action_items: list[str]
     urgency_explanation: str = Field(description="A brief explanation of why this priority was chosen") 
 
-    @field_validator("urgency_explaination")
+    @field_validator("urgency_explanation")
     @classmethod
     def explaination_must_be_long_enough(cls, v):
         if len(v.split()) < 10:
