@@ -5,7 +5,7 @@ import instructor
 
 load_dotenv()
 
-client = instructor.from_litellm(completion)
+client = instructor.from_litellm(completion, mode=instructor.Mode.JSON)
 
 def call_llm(messages, response_model=None,
              temperature=0, max_retries=2):
