@@ -7,8 +7,7 @@ ourselves. We feed the result back ourselves.
 """
 
 import json
-from litellm import completion
-from utils.llm_config import get_model, get_api_base
+from utils.llm_client import call_llm
 
 # A "tool" is just a Python function. The llm doesn't run it. We do.
 def get_stock_price(symbol: str) -> str:
@@ -40,24 +39,16 @@ TOOLS_SCHEMA = [
 ]
 
 def run_agent(user_question: str, max_iterations: int = 5) -> str:
-    model = get_model()
-    api_base = get_api_base(model)
     messages = [
         {"role": "system", "content": "You are a financial assistant. Use tools when needed"},
         {"role": "user", "content": user_question}
     ]
 
     for step in range(max_iterations):
-        params = {
-            "model": model,
-            "messages": messages,
-            "tools": TOOLS_SCHEMA, "temperature": 0
-            }
-        
-        if api_base:
-            params["api_base"] = api_base
-        
-        response = completion(**params)
+        response = call_llm(
+            messages=messages,
+            tools=TOOLS_SCHEMA,
+            return_raw_response=True)
         assistant_message = response.choices[0].message
 
         #If the LLM didn't ask for a tool, we're done

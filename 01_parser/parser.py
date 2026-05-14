@@ -1,7 +1,13 @@
+from typing import TypeVar, Type
+from pydantic import BaseModel
 from utils.llm_client import call_llm
 
-def parse_email_to_crm(email_context,
-                       response_model, temperature=0, max_retries=2):
+T = TypeVar("T", bound=BaseModel)
+
+def parse_email_to_crm(email_context: str,
+                       response_model: Type[T],
+                       temperature: float = 0,
+                       max_retries: int = 2) -> T:
     messages = [
         {
             "role": "system",
