@@ -31,3 +31,10 @@ def get_llm_params(temperature: float = 0,
     if extra:
         params.update(extra)
     return params
+
+def get_tavily_api_key() -> str | None:
+    key = os.getenv("TAVILY_API_KEY")
+    if not key or key == "your_tavily_api_key_here":
+        return None
+    return key
+    

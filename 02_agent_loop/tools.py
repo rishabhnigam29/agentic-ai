@@ -1,4 +1,6 @@
 from langchain_core.tools import tool
+from langchain_tavily import TavilySearch
+from utils.llm_config import get_tavily_api_key
 import yfinance as yf
 
 @tool
@@ -26,6 +28,20 @@ def get_stock_price(symbol: str) -> str:
         return f"Unable to fetch the current price for {symbol.upper()}."
     except Exception as e:
         return f"Error fetching {symbol.upper()}: {e}"
+    
+def _build_tavily_search_tool():
+    """Return a Tavily Search tool instance if the API key is available, otherwise None."""
+    key = get_tavily_api_key()
+    if key is None:
+        return None
+    return TavilySearch(max_results=3, include_raw_content=False, api_key=key)
+
+def get_all_tools():
+    tools = [get_stock_price]
+    tavily_tool = _build_tavily_search_tool()
+    if tavily_tool:
+        tools.append(tavily_tool)
+    return tools
             
 
 if __name__ == "__main__":
