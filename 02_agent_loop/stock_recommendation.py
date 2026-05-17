@@ -7,6 +7,16 @@ from models import StockRecommendation
 setup_tracing(project_name="module2-research-agent")
 
 def get_stock_recommendation(symbol: str) -> StockRecommendation:
+    """
+    Get a structured stock recommendation using the agent's tools and LLM analysis.
+
+    Args:
+        symbol: Stock ticker symbol (e.g., AAPL, MSFT, GOOGL)
+
+    Returns:
+        StockRecommendation with structured recommendation data
+    """
+    # Step 1: agent gathers messy data via tools.
     gathering_prompt = (
         f"Analyze the stock {symbol}."
         "Get the current price. Get the latest market news. "
@@ -16,6 +26,7 @@ def get_stock_recommendation(symbol: str) -> StockRecommendation:
 
     print("Raw agent output:", free_form_answer)
 
+    # Step 2: bind the same LiteLLM model to the Pydantic schema via LangChain.
     llm = ChatLiteLLM(**get_llm_params(max_tokens=2000))
     structured_llm = llm.with_structured_output(StockRecommendation)
 

@@ -3,7 +3,7 @@ from langchain_tavily import TavilySearch
 from utils.llm_config import get_tavily_api_key
 import yfinance as yf
 
-@tool
+@tool # Decorator converts this Python function into a LangChain tool
 def get_stock_price(symbol: str) -> str:
     """Get the current stock price for a stock ticker symbol.
     
@@ -17,10 +17,12 @@ def get_stock_price(symbol: str) -> str:
     try:
         stock = yf.Ticker(symbol)
 
+        # Try to get price from info dict first
         info = stock.info
         if price := info.get("currentPrice") or info.get("regularMarketPrice"):
             return f"The current price of {symbol.upper()} is ${price:.2f}."
         
+        # Fallback to history if info didn't work
         hist = stock.history(period="1d")
         if not hist.empty:
             return f"The current price of {symbol.upper()} is ${float(hist['Close'].iloc[-1]):.2f}."
@@ -37,8 +39,16 @@ def _build_tavily_search_tool():
     return TavilySearch(max_results=3, include_raw_content=False, api_key=key)
 
 def get_all_tools():
+    """
+    Get all available tools for the agent.
+
+    Returns:
+        List of LangChain tools
+    """
     tools = [get_stock_price]
     tavily_tool = _build_tavily_search_tool()
+
+    # Add Tavily search tool if available
     if tavily_tool:
         tools.append(tavily_tool)
     return tools
