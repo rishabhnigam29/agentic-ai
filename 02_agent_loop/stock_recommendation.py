@@ -1,7 +1,10 @@
 from langchain_litellm import ChatLiteLLM
 from utils.llm_config import get_llm_params
+from utils.tracing import setup_tracing
 from agent import run_agent
 from models import StockRecommendation
+
+setup_tracing(project_name="module2-research-agent")
 
 def get_stock_recommendation(symbol: str) -> StockRecommendation:
     gathering_prompt = (
