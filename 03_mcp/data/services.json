@@ -1,0 +1,32 @@
+[
+  {
+    "name": "auth-api",
+    "description": "Handles user login, token issuance, and refresh.",
+    "owner": "identity-team",
+    "runbook": "https://wiki.internal/runbooks/auth-api"
+  },
+  {
+    "name": "billing-service",
+    "description": "Manages subscriptions, invoices, and dunning emails.",
+    "owner": "fintech-team",
+    "runbook": "https://wiki.internal/runbooks/billing-service"
+  },
+  {
+    "name": "email-worker",
+    "description": "Sends transactional emails like invoices and password resets.",
+    "owner": "platform-team",
+    "runbook": "https://wiki.internal/runbooks/email-worker"
+  },
+  {
+    "name": "search-api",
+    "description": "Keyword search over products and documents.",
+    "owner": "search-team",
+    "runbook": "https://wiki.internal/runbooks/search-api"
+  },
+  {
+    "name": "notification-service",
+    "description": "Delivers in-app and push notifications across web and mobile.",
+    "owner": "growth-team",
+    "runbook": "https://wiki.internal/runbooks/notification-service"
+  }
+]
