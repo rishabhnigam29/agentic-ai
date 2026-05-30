@@ -1,3 +1,4 @@
+import argparse
 import json
 from pathlib import Path
 
@@ -54,5 +55,24 @@ def services_resource() -> str:
     """The full service catalog as JSON. Read-only data the host can pull in."""
     return json.dumps([s.model_dump() for s in SERVICES], indent=2)
 
+def main():
+    parser = argparse.ArgumentParser(description="Service catalog MCP server")
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "http"],
+        default="stdio",
+        help="stdio for hosts that spawn the server (Claude Desktop); http for shared use. "
+    )
+    args = parser.parse_args()
+
+    if args.transport == "http":
+        url = f"http://{mcp.settings.host}:{mcp.settings.port}/mcp"
+        print(f"MCP server listening on {url}")
+        mcp.run(transport="streamable-http")
+    else:
+        print("MCP server running with stdio transport")
+        mcp.run()
+
+
 if __name__ == "__main__":
-    mcp.run()
+    main()
