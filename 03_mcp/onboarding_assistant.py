@@ -15,7 +15,7 @@ THIS_DIR = Path(__file__).resolve().parent
 SYSTEM_PROMPT = """
 You are an engineering onboarding assistant for new joiners and on-call
 engineers. When asked about a specific services, owner or runbook, use the
-catalog tools available to you. Otherwise, answer directly. Once you have
+catalog tools and filesystem tools available to you. Otherwise, answer directly. Once you have
 enough information to answer, stop calling tools.
 """
 
@@ -35,6 +35,14 @@ def get_catalog_connection() -> dict:
             "args" : [str(THIS_DIR / "catalog_server.py")],
             "transport": "stdio",
             "cwd": str(THIS_DIR),
+        },
+        "filesystem": {
+            "command" : "npx",
+            "args" : [
+                "-y", "@modelcontextprotocol/server-filesystem",
+                "C:\\agentic-ai\\project_docs"
+            ],
+            "transport" : "stdio"
         }
     }
 
@@ -60,7 +68,7 @@ async def ask_onboarding_assistant(user_question: str) -> str:
 
 if __name__ == "__main__":
     setup_tracing("module-3-mcp-onboarding-assistant")
-    question = "Who owns the billing service and where can I find the runbook?"
+    question = "find runbook url for the billing service, then list any files in project_docs that have 'billing in there name'. Give me its full path"
     answer = asyncio.run(ask_onboarding_assistant(question))
     print(f"Question: {question}")
     print(f"Answer: {answer}")
