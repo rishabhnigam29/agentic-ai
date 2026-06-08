@@ -15,7 +15,10 @@ THIS_DIR = Path(__file__).resolve().parent
 SYSTEM_PROMPT = """
 You are an engineering onboarding assistant for new joiners and on-call
 engineers. When asked about a specific services, owner or runbook, use the
-catalog tools and filesystem tools available to you. Otherwise, answer directly. Once you have
+catalog tools and filesystem tools available to you.
+Before reading or searching any files, call 'list_allowed_directories' to find
+out which folder you have access to. Only search within those folders. Do not guess file paths.
+ Otherwise, answer directly. Once you have
 enough information to answer, stop calling tools.
 """
 
@@ -68,7 +71,7 @@ async def ask_onboarding_assistant(user_question: str) -> str:
 
 if __name__ == "__main__":
     setup_tracing("module-3-mcp-onboarding-assistant")
-    question = "find runbook url for the billing service, then list any files in project_docs that have 'billing in there name'. Give me its full path"
+    question = "Investigate the billing service. Find the owner and runbook URL, then dig up any files about 'billing' anywhere on my machine and pull it all in a short report."
     answer = asyncio.run(ask_onboarding_assistant(question))
     print(f"Question: {question}")
     print(f"Answer: {answer}")
