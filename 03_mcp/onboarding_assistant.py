@@ -15,7 +15,7 @@ THIS_DIR = Path(__file__).resolve().parent
 SYSTEM_PROMPT = """
 You are an engineering onboarding assistant for new joiners and on-call
 engineers. When asked about a specific services, owner or runbook, use the
-catalog tools and filesystem tools available to you.
+catalog tools, notion tools and filesystem tools available to you.
 Before reading or searching any files, call 'list_allowed_directories' to find
 out which folder you have access to. Only search within those folders. Do not guess file paths.
  Otherwise, answer directly. Once you have
@@ -46,6 +46,14 @@ def get_catalog_connection() -> dict:
                 "C:\\agentic-ai\\project_docs"
             ],
             "transport" : "stdio"
+        },
+        "notion": {
+            "command" : "npx",
+            "args" : ["-y", "@notionhq/notion-mcp-server"],
+            "transport" : "stdio",
+            "env" : {
+                "NOTION_TOKEN": os.environ.get("NOTION_TOKEN", "")
+            }
         }
     }
 
@@ -71,7 +79,7 @@ async def ask_onboarding_assistant(user_question: str) -> str:
 
 if __name__ == "__main__":
     setup_tracing("module-3-mcp-onboarding-assistant")
-    question = "Investigate the billing service. Find the owner and runbook URL, then dig up any files about 'billing' anywhere on my machine and pull it all in a short report."
+    question = "Investigate Billing Service.Find the owner and runbook url, retrieve the latest billing-service postmoterm from notion and list any local files with 'billing' in name. Summarise everything in short report."
     answer = asyncio.run(ask_onboarding_assistant(question))
     print(f"Question: {question}")
     print(f"Answer: {answer}")
