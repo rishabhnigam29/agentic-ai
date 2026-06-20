@@ -61,8 +61,14 @@ def ingest_document(file_path: str) -> int:
     client = get_chroma_client()
     collection = get_or_create_collection(client)
 
+    existing = collection.count()
+    if existing > 0:
+        print(f" Clearing {existing} existing chunks (re-ingest)")
+        collection.delete(ids=collection.get()["ids"])
+
     ids = [f"chunk_{i}" for i in range(len(chunks))]
     metadata = [{"source": file_path , 
+                 "embedding_model": config.EMBEDDING_MODEL,
                  "chunk_index": i} for i in range(len(chunks))]
     
     collection.add(
