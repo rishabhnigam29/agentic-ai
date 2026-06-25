@@ -57,7 +57,7 @@ def chunk_sections(chunks: list[str]) -> list[str]:
         if found:
             current = found[-1].strip()
         sections.append(current)
-        return sections
+    return sections
 
 
 def ingest_document(file_path: str) -> int:
