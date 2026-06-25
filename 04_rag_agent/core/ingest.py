@@ -1,12 +1,15 @@
 """Document ingestion pipeline - load, chunk, embed, store in ChromaDB."""
 
 from pathlib import Path
+import re
 import chromadb
 from chromadb.api import ClientAPI
 from litellm import embedding
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from shared import config
+
+SECTION_HEADING = re.compile(r"(?m)^\s*(SECTION \d+:[^\n]*|\d+\.\d+ [A-Z][A-Z• \-]+)")
 
 def load_document(file_path: str) -> str:
     """Load a document from a file path."""
@@ -46,6 +49,16 @@ def get_or_create_collection(client: ClientAPI) -> chromadb.Collection:
     return client.get_or_create_collection(name=config.COLLECTION_NAME,
                                         metadata={"hnsw:space": "cosine"},
                                             )
+def chunk_sections(chunks: list[str]) -> list[str]:
+    """Label chunks with section headers""" 
+    sections, current = [], "Preamble"
+    for chunk in chunks:
+        found = SECTION_HEADING.findall(chunk)
+        if found:
+            current = found[-1].strip()
+        sections.append(current)
+        return sections
+
 
 def ingest_document(file_path: str) -> int:
     print(f"Loading document from {file_path}...")
@@ -67,8 +80,10 @@ def ingest_document(file_path: str) -> int:
         collection.delete(ids=collection.get()["ids"])
 
     ids = [f"chunk_{i}" for i in range(len(chunks))]
+    sections = chunk_sections(chunks)
     metadata = [{"source": file_path , 
                  "embedding_model": config.EMBEDDING_MODEL,
+                 "section": sections[i],
                  "chunk_index": i} for i in range(len(chunks))]
     
     collection.add(
