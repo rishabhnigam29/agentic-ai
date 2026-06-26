@@ -71,7 +71,7 @@ class ConversationMemory:
         )
         return summary
     
-    def get_relevant_summaries(self, query: str, top_k: int = 3) -> list[str]:
+    def get_relevant_memory(self, query: str, top_k: int = 3) -> list[str]:
         """Retrieve the most relevant summaries for a given query."""
         if self.collection.count() == 0:
             return []
@@ -106,5 +106,5 @@ if __name__ == "__main__":
     print(summary)
 
     print("\n Retrieving by similarity to 'tell me about pregnancy benifits':")
-    for hit in memory.get_relevant_summaries("tell me about pregnancy benefits"):
+    for hit in memory.get_relevant_memory("tell me about pregnancy benefits"):
         print(f"- {hit}")

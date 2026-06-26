@@ -1,30 +1,10 @@
 """Stage A - Basic RAG: question-> retrieve-> augment prompt-> answer"""
 
-from core.ingest import get_chroma_client, get_or_create_collection, ingest_document
 from core.retriever import ChromaRetriever, RetrievedChunk
-from shared import config
 from utils.llm_client import call_llm
 from utils.tracing import setup_tracing, traceable
-
-ANALYST_PROMPT = """
-You are a medical policy analyst. Answer the user's question using ONLY the document
-excerpts below. If the excerts don't contain enough information, say no.
-Cite the chunk index for any claim you make.
-"""
-
-def ensure_ingested()-> None:
-    client = get_chroma_client()
-    collection = get_or_create_collection(client)
-    if collection.count() == 0:
-        print("First run - ingesting documents...")
-        ingest_document(config.SAMPLE_POLICY)
-        print("Documents ingested.")
-
-def format_sources(chunks: list[RetrievedChunk]) -> str:
-    return "\n".join(
-        f" [{i}] chunk {c.metadata.get('chunk_index', '?')} (score: {c.score:.3f})"
-        for i, c in enumerate(chunks, start=1)
-    )
+from stages.helpers import ensure_ingested, format_sources
+from shared.prompts import ANALYST_STAGE_A_PROMPT
 
 @traceable(NAME="RAG Retrieval")
 def retrieve(retriever: ChromaRetriever, question: str, top_k: int = 5) -> list[RetrievedChunk]:
@@ -36,7 +16,7 @@ def generate(question: str, context: str)-> str:
     """Child Span : call the LLM with the question and retrieved context to generate an answer"""
     return call_llm(
         messages=[
-            {"role": "system", "content": f"{ANALYST_PROMPT}\n\nDocument EXCERTS:\n{context}"},
+            {"role": "system", "content": f"{ANALYST_STAGE_A_PROMPT}\n\nDocument EXCERTS:\n{context}"},
             {"role": "user", "content": f"Question: {question}"},
         ],
         temperature=0.0,
