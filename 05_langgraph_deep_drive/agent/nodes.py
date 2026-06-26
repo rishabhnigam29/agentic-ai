@@ -3,7 +3,74 @@
 from __future__ import annotations
 from utils.llm_client import call_llm
 from shared.prompts import INTAKE_PROMPT
-from agent.state import DueDiligenceState
+from agent.state import DueDiligenceState, FinancialSubState, MarketSubState, TeamSubState
+
+from subgraphs.financials import build_financial_subgraph
+from subgraphs.market import build_market_subgraph
+from subgraphs.team import build_team_subgraph
+
+SubState = FinancialSubState | MarketSubState | TeamSubState
+
+def _run_subgraph(subgraph_builder, init_state: SubState, branch_name: str) -> dict:
+    """Invoke a compiled subgraph and stash the results in the main state."""
+    compiled = subgraph_builder().compile()
+    result = compiled.invoke(init_state)
+    return {
+        f"{branch_name}_result": {
+            
+            "score": result["score"],
+            "summary": result["summary"],
+            "key_findings": result["key_findings"],
+            "risks": result["risks"],
+        },
+    }
+
+def financial_analysis_node(state: DueDiligenceState) -> dict:
+    """Run the financial analysis subgraph."""
+    return _run_subgraph(
+        build_financial_subgraph,
+        FinancialSubState(
+            pitch_deck=state["pitch_deck"],
+            extracted_info={},
+            score=0.0,
+            summary="",
+            key_findings=[],
+            risks=[],
+        ),
+        "financial",
+    )
+
+def market_analysis_node(state: DueDiligenceState) -> dict:
+    """Run the market analysis subgraph."""
+    return _run_subgraph(
+        build_market_subgraph,
+        MarketSubState(
+            pitch_deck=state["pitch_deck"],
+            extracted_info={},
+            score=0.0,
+            summary="",
+            key_findings=[],
+            risks=[],
+        ),
+        "market",
+    )
+
+def team_analysis_node(state: DueDiligenceState) -> dict:
+    """Run the team analysis subgraph."""
+    return _run_subgraph(
+        build_team_subgraph,
+        TeamSubState(
+            pitch_deck=state["pitch_deck"],
+            extracted_info={},
+            score=0.0,
+            summary="",
+            key_findings=[],
+            risks=[],
+        ),
+        "team",
+    )
+
+
 
 def intake_node(state: DueDiligenceState) -> dict:
     """Parse the pitch deck and extract the startup name."""

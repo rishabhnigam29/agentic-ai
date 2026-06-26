@@ -3,6 +3,33 @@
 from __future__ import annotations
 from typing_extensions import TypedDict
 
+#------Main graph state-------------------------------------------
 class DueDiligenceState(TypedDict):
     startup_name: str
     pitch_deck: str
+
+#------Subgraph state (each branch has its own state)-------------------------------------------
+
+class FinancialSubState(TypedDict):
+    pitch_deck: str
+    extracted_info: dict
+    score: float
+    summary: str
+    key_findings: list[str]
+    risks: list[str]
+
+class MarketSubState(TypedDict):
+    pitch_deck: str
+    extracted_info: dict
+    score: float
+    summary: str
+    key_findings: list[str]
+    risks: list[str]
+
+class TeamSubState(TypedDict):
+    pitch_deck: str
+    extracted_info: dict
+    score: float
+    summary: str
+    key_findings: list[str]
+    risks: list[str]
