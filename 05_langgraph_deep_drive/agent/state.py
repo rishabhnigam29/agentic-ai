@@ -1,12 +1,17 @@
 """State types for the due deligence graph"""
 
 from __future__ import annotations
+
+import operator
+from typing import Annotated
+
 from typing_extensions import TypedDict
 
 #------Main graph state-------------------------------------------
 class DueDiligenceState(TypedDict):
     startup_name: str
     pitch_deck: str
+    branch_results: Annotated[list[dict], operator.add]
 
 #------Subgraph state (each branch has its own state)-------------------------------------------
 

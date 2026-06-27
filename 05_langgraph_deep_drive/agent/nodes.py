@@ -16,14 +16,20 @@ def _run_subgraph(subgraph_builder, init_state: SubState, branch_name: str) -> d
     compiled = subgraph_builder().compile()
     result = compiled.invoke(init_state)
     return {
-        f"{branch_name}_result": {
-            
+        "branch_result": {
+            "branch": branch_name,   
             "score": result["score"],
             "summary": result["summary"],
             "key_findings": result["key_findings"],
             "risks": result["risks"],
         },
     }
+
+def aggregate_node(state: DueDiligenceState) -> dict:
+    """Stub - properly fleshed out next lesson"""
+    for r in state["branch_results"]:
+        print(f" {r['branch']:<10s} score: {r['score']:.0f}/100")
+    return {} 
 
 def financial_analysis_node(state: DueDiligenceState) -> dict:
     """Run the financial analysis subgraph."""
