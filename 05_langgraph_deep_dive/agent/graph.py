@@ -5,7 +5,7 @@ from __future__ import annotations
 from langgraph.graph import StateGraph, START, END
 
 from agent.state import DueDiligenceState
-from agent.nodes import aggregate_node, intake_node, financial_analysis_node, market_analysis_node, team_analysis_node, auto_approve_node, auto_reject_node, human_review_node, route_after_aggregate
+from agent.nodes import aggregate_node, generate_report_node, intake_node, financial_analysis_node, market_analysis_node, team_analysis_node, auto_approve_node, auto_reject_node, human_review_node, route_after_aggregate
 
 def build_graph() -> StateGraph:
     """Construct the stategraph and return it (uncompiled)"""
@@ -21,6 +21,8 @@ def build_graph() -> StateGraph:
     g.add_node("auto_approve", auto_approve_node)
     g.add_node("auto_reject", auto_reject_node)
     g.add_node("human_review", human_review_node)
+
+    g.add_node("generate_report", generate_report_node)
 
     g.add_edge(START, "intake")
 
@@ -44,8 +46,10 @@ def build_graph() -> StateGraph:
                             },
                             )
     
-    g.add_edge("auto_approve", END)
-    g.add_edge("auto_reject", END)
-    g.add_edge("human_review", END)
+    g.add_edge("auto_approve", "generate_report")
+    g.add_edge("auto_reject", "generate_report")
+    g.add_edge("human_review", "generate_report")
+
+    g.add_edge("generate_report", END)
 
     return g

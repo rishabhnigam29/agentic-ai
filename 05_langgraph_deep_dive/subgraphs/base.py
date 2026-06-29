@@ -36,7 +36,7 @@ def build_extract_analyze_subgraph(
             temperature = 0.0,
             response_model = BranchAnalysis,
         )
-        print(f"Analysis result for {branch_name}: {result}")
+        #print(f"Analysis result for {branch_name}: {result}")
         return {
             "score": result.score,
             "summary": result.summary,

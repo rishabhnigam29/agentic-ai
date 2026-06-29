@@ -25,14 +25,17 @@ def main() -> None:
     initial_state = {
         "startup_name":"",
         "pitch_deck" : deck_text,
+        "branch_results": [],
+        "overall_score": 0.0,
+        "recommendation": "",
+        "human_decision": "",
+        "human_feedback": "",
+        "final_report": "",
     }
 
     result = app.invoke(initial_state)
 
-    print(f"Startup name: {result['startup_name']}")
-
-    print(f"\nOverall weighted score: {result['overall_score']:.2f}")
-    print(f"\nRecommendation: {result['recommendation'].upper()}")
+    print(result["final_report"])
 
 if __name__ == "__main__":
     main()

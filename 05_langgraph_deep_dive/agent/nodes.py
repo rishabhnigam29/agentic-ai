@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 from utils.llm_client import call_llm
-from shared.prompts import INTAKE_PROMPT
+from shared.prompts import INTAKE_PROMPT, AGGREGATE_PROMPT
 from agent.state import DueDiligenceState, FinancialSubState, MarketSubState, TeamSubState
 
 from subgraphs.financials import build_financial_subgraph
 from subgraphs.market import build_market_subgraph
 from subgraphs.team import build_team_subgraph
+from shared.models import DueDiligenceReport
 
 from shared.config import BRANCH_WEIGHTS, AUTO_APPROVE_THRESHOLD, AUTO_REJECT_THRESHOLD
 
@@ -121,3 +122,70 @@ def intake_node(state: DueDiligenceState) -> dict:
             temperature=0,
     )
     return {"startup_name": name.strip().strip('"').strip("'")}
+
+def generate_report_node(state: DueDiligenceState) -> dict:
+    """Produce the final due diligence report based on the aggregated results."""
+    results = state["branch_results"]
+    branch_texts = "\n\n".join(
+        f"##Branch: {r['branch'].upper()} \nScore: {r['score']}/100"
+        "\nSummary: {r['summary']}"
+        "\nFindings: {', '.join(r['key_findings'])}"
+        "\nRisks: {', '.join(r['risks'])}"
+        for r in results
+    )
+
+    report: DueDiligenceReport = call_llm(
+        messages=[
+            {"role": "system", "content": AGGREGATE_PROMPT},
+            {"role": "user", 
+             "content": (
+             f"Startup: {state['startup_name']}\n\n"
+             f"Overall weighted score: {state['overall_score']}/100\n\n"
+             f"Automated recommendation: {state['recommendation'].upper()}\n\n"
+             f"Branch Analysis Results:\n{branch_texts}"
+             ),
+            },
+        ],
+        temperature=0,
+        response_model=DueDiligenceReport,
+    )
+
+    final_decision = state["recommendation"]
+
+    lines = [
+        "="*60,
+        f" DUE DILIGENCE REPORT FOR: {state['startup_name'].upper()} ",
+        "="*60,
+        "",
+        f"Overall Weighted Score: {state['overall_score']}/100",
+        f"Automated Recommendation: {final_decision.upper()}",
+        "",
+        "Executive Summary:",
+        "-"*40,
+        report.executive_summary,
+        "",
+    ]
+
+    for branch, summary in report.branch_summaries.items():
+        lines.append(f"{branch.upper()} Summary:")
+    lines.append("")
+
+    lines.append("Top 3 Strengths:")
+    lines.append("-"*40)
+    for strength in report.top_strengths:
+        lines.append(f"- {strength}")
+    lines.append("")
+
+    lines.append("Top 3 Risks:")
+    lines.append("-"*40)
+    for risk in report.top_risks:
+        lines.append(f"- {risk}")
+    lines.append("")
+
+    lines.append("Final Investment Verdict:")
+    lines.append("-"*40)
+    lines.append(report.final_verdict)
+    lines.append("="*60)
+
+    return {"final_report": "\n".join(lines)}
+
