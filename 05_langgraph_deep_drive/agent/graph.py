@@ -5,7 +5,7 @@ from __future__ import annotations
 from langgraph.graph import StateGraph, START, END
 
 from agent.state import DueDiligenceState
-from agent.nodes import aggregate_node, intake_node, financial_analysis_node, market_analysis_node, team_analysis_node
+from agent.nodes import aggregate_node, intake_node, financial_analysis_node, market_analysis_node, team_analysis_node, auto_approve_node, auto_reject_node, human_review_node, route_after_aggregate
 
 def build_graph() -> StateGraph:
     """Construct the stategraph and return it (uncompiled)"""
@@ -16,6 +16,11 @@ def build_graph() -> StateGraph:
     g.add_node("market_analysis", market_analysis_node)
     g.add_node("team_analysis", team_analysis_node)
     g.add_node("aggregate", aggregate_node)
+
+    #Decision nodes
+    g.add_node("auto_approve", auto_approve_node)
+    g.add_node("auto_reject", auto_reject_node)
+    g.add_node("human_review", human_review_node)
 
     g.add_edge(START, "intake")
 
@@ -29,6 +34,18 @@ def build_graph() -> StateGraph:
     g.add_edge("market_analysis", "aggregate")
     g.add_edge("team_analysis", "aggregate")
 
-    g.add_edge("aggregate", END)
+    # Conditional routing based on score
+    g.add_conditional_edges("aggregate", 
+                            route_after_aggregate,
+                            {
+                                "approve": "auto_approve",
+                                "reject": "auto_reject",
+                                "review": "human_review"
+                            },
+                            )
+    
+    g.add_edge("auto_approve", END)
+    g.add_edge("auto_reject", END)
+    g.add_edge("human_review", END)
 
     return g

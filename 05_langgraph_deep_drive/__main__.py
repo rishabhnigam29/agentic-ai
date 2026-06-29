@@ -31,5 +31,8 @@ def main() -> None:
 
     print(f"Startup name: {result['startup_name']}")
 
+    print(f"\nOverall weighted score: {result['overall_score']:.2f}")
+    print(f"\nRecommendation: {result['recommendation'].upper()}")
+
 if __name__ == "__main__":
     main()

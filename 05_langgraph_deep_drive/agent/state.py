@@ -12,6 +12,9 @@ class DueDiligenceState(TypedDict):
     startup_name: str
     pitch_deck: str
     branch_results: Annotated[list[dict], operator.add]
+    overall_score: float
+    recommendation: str # "approve", "reject", or "review"
+    final_report: str
 
 #------Subgraph state (each branch has its own state)-------------------------------------------
 
