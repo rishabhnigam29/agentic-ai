@@ -59,7 +59,8 @@ def auto_reject_node(state: DueDiligenceState) -> dict:
     return {"human_decision": "reject", "human_feedback" : "Auto-rejected based on low overall score."}
 
 def human_review_node(state: DueDiligenceState) -> dict:
-    """Placeholder - later lesson turns this into a real inerrupt"""
+    """Placeholder node where the graph pauses for human input. 
+    In a real application, this would be replaced with a mechanism to collect human feedback."""
     return {}
 
 def route_after_aggregate(state: DueDiligenceState) -> dict:
@@ -134,6 +135,13 @@ def generate_report_node(state: DueDiligenceState) -> dict:
         for r in results
     )
 
+    human_section = ""
+    if state.get("human_decision") and state["recommendation"] == "review":
+        human_section = (
+            f"\n\nHuman reviewer decision: {state['human_decision'].upper()}"
+            f"\n Human Feedback: {state.get('human_feedback', 'N/A')}"
+        )
+
     report: DueDiligenceReport = call_llm(
         messages=[
             {"role": "system", "content": AGGREGATE_PROMPT},
@@ -142,6 +150,7 @@ def generate_report_node(state: DueDiligenceState) -> dict:
              f"Startup: {state['startup_name']}\n\n"
              f"Overall weighted score: {state['overall_score']}/100\n\n"
              f"Automated recommendation: {state['recommendation'].upper()}\n\n"
+             f"{human_section}\n\n"
              f"Branch Analysis Results:\n{branch_texts}"
              ),
             },
@@ -150,7 +159,7 @@ def generate_report_node(state: DueDiligenceState) -> dict:
         response_model=DueDiligenceReport,
     )
 
-    final_decision = state["recommendation"]
+    final_decision = state.get("human_decision") or state["recommendation"]
 
     lines = [
         "="*60,

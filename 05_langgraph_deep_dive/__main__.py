@@ -23,7 +23,9 @@ def main() -> None:
     deck_text = _load_deck(SAMPLE_DECK)
 
     checkpointer = MemorySaver()
-    app = build_graph().compile(checkpointer=checkpointer)
+    app = build_graph().compile(
+        checkpointer=checkpointer,
+        interrupt_before=["human_review"])
 
     thread_config = {"configurable" : {"thread_id" : "duediligence_thread"}}
 
@@ -40,12 +42,31 @@ def main() -> None:
 
     result = app.invoke(initial_state, config=thread_config)
 
+    snapshot = app.get_state(thread_config)
+    pending_tasks = snapshot.next
+
+    if "human_review" in pending_tasks:
+        # Graph Paused - show branch results so far and ask for human input
+        print("Branch results so far:")
+        for r in sorted(result["branch_results"], key=lambda x: x["branch"]):
+            print(f"  - {r['branch']:>10s} : score={r['score']}/100, summary={r['summary'][:50]}")
+        print(f"\nOverall weighted score: {result['overall_score']}/100")
+
+        #Collect human input
+        decision = input("Your decision (approve/reject): ").strip().lower()
+        feedback = input("Your feedback (optional): ").strip()
+
+        #inject human input into the graph state and resume
+        app.update_state(thread_config, {"human_decision": decision, "human_feedback": feedback})
+
+        result = app.invoke(None, config=thread_config)
+
     print(result["final_report"])
 
-    state_history = list(app.get_state_history(thread_config))
-    print(f"\n[debug] {len(state_history)} checkpoints saved in memory:")
-    for s in state_history:
-        print(f"  - next = {s.next}, value = {list(s.values.keys())[:3]}")
+    #state_history = list(app.get_state_history(thread_config))
+    #print(f"\n[debug] {len(state_history)} checkpoints saved in memory:")
+    #for s in state_history:
+    #    print(f"  - next = {s.next}, value = {list(s.values.keys())[:3]}")
 
 if __name__ == "__main__":
     main()

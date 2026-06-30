@@ -14,6 +14,8 @@ class DueDiligenceState(TypedDict):
     branch_results: Annotated[list[dict], operator.add]
     overall_score: float
     recommendation: str # "approve", "reject", or "review"
+    human_decision: str # "approve", "reject", or "review"
+    human_feedback: str
     final_report: str
 
 #------Subgraph state (each branch has its own state)-------------------------------------------
