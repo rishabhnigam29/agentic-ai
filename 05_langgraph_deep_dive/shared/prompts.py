@@ -22,6 +22,13 @@ Focus on: team composition, relevant experience, track record, and any notable a
 Return a clear and structured summary of the team points you find.
 """
 
+VISUAL_EXTRACT_PROMPT = """You are a pitch deck quality analyst with expertise in visual communication.
+Analyze the visual presentation quality of the pitch deck. Evaluate: clarity
+of charts and data visualizations, overall design quality, information density,
+storytelling flow, and whether the visuals effectively support the narrative.
+If images are provided, analyse them in detail. If only text description of 
+visuals is avaiable,evaluate based on the description. """
+
 #------BRANCH analyze prompts-------------------------------------------
 FINANCIAL_ANALYZE_PROMPT = """
 You are a senior VC financial analyst performing due diligence on a startup. 

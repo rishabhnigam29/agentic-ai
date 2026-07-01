@@ -11,6 +11,7 @@ from typing_extensions import TypedDict
 class DueDiligenceState(TypedDict):
     startup_name: str
     pitch_deck: str
+    pitch_deck_images: list[str] #base64-encoded images
     branch_results: Annotated[list[dict], operator.add]
     overall_score: float
     recommendation: str # "approve", "reject", or "review"
@@ -38,6 +39,15 @@ class MarketSubState(TypedDict):
 
 class TeamSubState(TypedDict):
     pitch_deck: str
+    extracted_info: dict
+    score: float
+    summary: str
+    key_findings: list[str]
+    risks: list[str]
+
+class VisualSubState(TypedDict):
+    pitch_deck: str
+    pitch_deck_images: list[str] #base64-encoded images
     extracted_info: dict
     score: float
     summary: str

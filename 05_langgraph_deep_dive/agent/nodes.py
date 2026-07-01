@@ -1,36 +1,42 @@
 """ Node functions for the due diligence graph """
 
 from __future__ import annotations
+import time
 from utils.llm_client import call_llm
 from shared.prompts import INTAKE_PROMPT, AGGREGATE_PROMPT
-from agent.state import DueDiligenceState, FinancialSubState, MarketSubState, TeamSubState
+from agent.state import DueDiligenceState, FinancialSubState, MarketSubState, TeamSubState, VisualSubState
 
 from subgraphs.financials import build_financial_subgraph
 from subgraphs.market import build_market_subgraph
 from subgraphs.team import build_team_subgraph
+from subgraphs.visual import build_visual_subgraph
 from shared.models import DueDiligenceReport
 
 from shared.config import BRANCH_WEIGHTS, AUTO_APPROVE_THRESHOLD, AUTO_REJECT_THRESHOLD
 
-SubState = FinancialSubState | MarketSubState | TeamSubState
+SubState = FinancialSubState | MarketSubState | TeamSubState | VisualSubState
 
 def _run_subgraph(subgraph_builder, init_state: SubState, branch_name: str) -> dict:
     """Invoke a compiled subgraph and stash the results in the main state."""
     compiled = subgraph_builder().compile()
     result = compiled.invoke(init_state)
     return {
-        "branch_result": {
-            "branch": branch_name,   
-            "score": result["score"],
-            "summary": result["summary"],
-            "key_findings": result["key_findings"],
-            "risks": result["risks"],
-        },
+        "branch_results": [
+            {
+                "branch": branch_name,   
+                "score": result["score"],
+                "summary": result["summary"],
+                "key_findings": result["key_findings"],
+                "risks": result["risks"],
+            },
+        ],
     }
 
 def aggregate_node(state: DueDiligenceState) -> dict:
     """Compute weighted overall score and set recommendation based on thresholds."""
     results = state["branch_results"]
+    print("Branch Results:", state["branch_results"])
+
     score_by_branch = {r["branch"]: r["score"] for r in results}
 
     weighted_score = sum(
@@ -111,7 +117,22 @@ def team_analysis_node(state: DueDiligenceState) -> dict:
         "team",
     )
 
-
+def visual_analysis_node(state: DueDiligenceState) -> dict:
+    """Run the visual analysis subgraph."""
+    time.sleep(10)  
+    return _run_subgraph(
+        build_visual_subgraph,
+        VisualSubState(
+            pitch_deck=state["pitch_deck"],
+            pitch_deck_images=state.get("pitch_deck_images", []),
+            extracted_info={},
+            score=0.0,
+            summary="",
+            key_findings=[],
+            risks=[],
+        ),
+        "visual",
+    )
 
 def intake_node(state: DueDiligenceState) -> dict:
     """Parse the pitch deck and extract the startup name."""
@@ -126,6 +147,7 @@ def intake_node(state: DueDiligenceState) -> dict:
 
 def generate_report_node(state: DueDiligenceState) -> dict:
     """Produce the final due diligence report based on the aggregated results."""
+    time.sleep(10)  
     results = state["branch_results"]
     branch_texts = "\n\n".join(
         f"##Branch: {r['branch'].upper()} \nScore: {r['score']}/100"
@@ -176,7 +198,7 @@ def generate_report_node(state: DueDiligenceState) -> dict:
     ]
 
     for branch, summary in report.branch_summaries.items():
-        lines.append(f"{branch.upper()} Summary:")
+        lines.append(f"{branch.upper()} Summary: {summary} \n" )
     lines.append("")
 
     lines.append("Top 3 Strengths:")

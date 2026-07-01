@@ -6,7 +6,7 @@ PACKAGE_DIR = Path(__file__).resolve().parents[1]
 PROJECT_ROOT = PACKAGE_DIR.parent
 
 #---Score thresholds for routing--------------------
-AUTO_APPROVE_THRESHOLD = 70.0
+AUTO_APPROVE_THRESHOLD = 90.0
 AUTO_REJECT_THRESHOLD = 40.0
 
 #---Branch weights (must sum to 1.0)--------------------
