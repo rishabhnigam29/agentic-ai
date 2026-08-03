@@ -81,6 +81,9 @@ def main() -> None:
 
     print(result["final_report"])
 
+    with open("final_report.txt", "w", encoding="utf-8") as f:
+        f.write(str(result))
+
     #state_history = list(app.get_state_history(thread_config))
     #print(f"\n[debug] {len(state_history)} checkpoints saved in memory:")
     #for s in state_history:
