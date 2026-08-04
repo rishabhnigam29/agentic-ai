@@ -41,3 +41,15 @@ Use this when few section can't answer it.
 If the answer would be found in the document, use 'docs' instead of 'direct'.
 When unsure between 'docs' and 'direct', choose 'docs'.
 """
+
+REWRITER_PROMPT = """
+Rewrite the user's question into a concise, keyword-rich search query optimised
+for finding the relevant sections in a document. Return ONLY the rewritten query,
+nothing else
+"""
+
+RELEVANCE_GRADER_PROMPT = """
+You are a relevance grader. Given the user's query and retrieved document chunks,
+decide if the chunks contain enough information to answer the query. Be strict - 
+if the chunks are only tangentially related, mark as not relevant. 
+"""

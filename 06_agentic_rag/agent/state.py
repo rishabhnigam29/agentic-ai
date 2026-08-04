@@ -31,3 +31,7 @@ class RouteDecision(BaseModel):
             "(e.g. 'analyze this', 'review the whole thing', 'find all problems')"
         )
     )
+
+class RelevanceGrade(BaseModel):
+    reasoning: str = Field(description="Why the chunks are or are not relevant to the query.")
+    relevant: bool = Field(description="True if the retrieved chunks answer the query")

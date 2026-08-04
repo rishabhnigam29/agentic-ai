@@ -22,3 +22,6 @@ SAMPLE_POLICY = str(PACKAGE_DIR / "data" / "sample_policy.pdf")
 
 #------------------------------- Memory tunables ------------------------------#
 SUMMARIZE_EVERY_N_TURNS = 3
+
+#------------------------------- Retrieval tunables ------------------------------#
+MAX_RETRIEVAL_ATTEMPTS = 2
