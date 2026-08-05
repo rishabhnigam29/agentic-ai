@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from utils.llm_client import call_llm
-from shared.prompts import ROUTER_PROMPT, REWRITER_PROMPT, RELEVANCE_GRADER_PROMPT
-from agent.state import RouteDecision, AgentState, RelevanceGrade
+from shared.prompts import ROUTER_PROMPT, REWRITER_PROMPT, RELEVANCE_GRADER_PROMPT, METADATA_FILTER_PROMPT
+from agent.state import RouteDecision, AgentState, RelevanceGrade, MetadataFilter
 
 from core.retriever import ChromaRetriever
 from shared import config
@@ -95,3 +95,36 @@ def route_after_evalaute(state: AgentState) -> dict:
     if state.get("retrieval_attempts", 0) < config.MAX_RETRIEVAL_ATTEMPTS:
         return "generate"
     return "rewrite"  # If chunks are not relevant and max attempts reached, rewrite the query
+
+def filter_node(state: AgentState)-> dict:
+    """Decide whether to narrow retrieval to a specific section before searching."""
+    prompt = METADATA_FILTER_PROMPT.format(
+        sections="\n".join(f"- {s}" for s in config.SECTIONS))
+
+    decision: MetadataFilter = call_llm(
+        messages=[{"role": "system","content": prompt,},
+            {"role": "user", "content": state["query"]}],
+            response_model=MetadataFilter,
+            temperature=0.0,
+    )
+
+    #Guard against a hallucinated section - only keep real sections or None
+    if decision.section and decision.section not in config.SECTIONS:
+        decision.section = None
+
+    return {"metadata_filter": decision}
+
+def retrieve_node(state: AgentState) -> dict:
+    """Retrieve chunks from the document store, narrowed by the section filter."""
+    retriever = _get_retriever()
+    search_query = state.get("rewritten_query") or state["query"]
+
+    mfilter = state.get("metadata_filter")
+    where_clause = {"section": mfilter} if mfilter and mfilter.section else None
+
+    chunks = retriever.search(search_query, top_k=5, where=where_clause)
+    if where_clause and not chunks:
+        # Filter was too narrow - fall back to searching everything
+        chunks = retriever.search(search_query, top_k=5, where=None)
+    attempts = state.get("retrieval_attempts", 0) + 1
+    return {"retrieved_chunks": chunks, "retrieval_attempts": attempts}

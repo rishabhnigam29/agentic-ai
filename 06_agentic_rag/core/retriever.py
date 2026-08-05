@@ -42,13 +42,14 @@ class ChromaRetriever:
         if stored_model and stored_model != config.EMBEDDING_MODEL :
             raise EmbeddingModelMismatchError("Ingestion and Retrieval models are different")
 
-    def search(self, query: str, top_k: int = 5) -> list[RetrievedChunk]:
+    def search(self, query: str, top_k: int = 5, where: dict | None = None) -> list[RetrievedChunk]:
         query_vector = embedding(model=config.EMBEDDING_MODEL, input=[query]).data[0]["embedding"]
 
         results = self.collection.query(
             query_embeddings=[query_vector],
             n_results=top_k,
-            include=["documents", "metadatas", "distances"],
+            where=where or None,
+            include=["documents", "metadatas", "distances"]
         )
 
         chunks: list[RetrievedChunk] = []

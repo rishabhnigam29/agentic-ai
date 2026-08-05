@@ -35,3 +35,8 @@ class RouteDecision(BaseModel):
 class RelevanceGrade(BaseModel):
     reasoning: str = Field(description="Why the chunks are or are not relevant to the query.")
     relevant: bool = Field(description="True if the retrieved chunks answer the query")
+
+class MetadataFilter(BaseModel):
+    reasoning: str = Field(description="Why this section(or None) was chosen")
+    section: str | None = Field(default=None, 
+                                description="The exact section label to filter on, or null to search everything")

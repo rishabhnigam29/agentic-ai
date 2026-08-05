@@ -2,7 +2,9 @@
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
+load_dotenv()
 PACKAGE_DIR = Path(__file__).resolve().parents[1]
 
 #-------------------------------- ChromaDB ---------------------------------#
@@ -25,3 +27,14 @@ SUMMARIZE_EVERY_N_TURNS = 3
 
 #------------------------------- Retrieval tunables ------------------------------#
 MAX_RETRIEVAL_ATTEMPTS = 2
+
+SECTIONS =[
+    "Definations & General Provisions",
+    "Eligibility & Enrollment",
+    "Covered Services",
+    "Exclusions & Limitations",
+    "Claims & Appeals",
+    "Premium & Cost-Sharing",
+    "Miscellaneous Provisions",
+    "Other"
+]

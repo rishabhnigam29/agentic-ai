@@ -53,3 +53,21 @@ You are a relevance grader. Given the user's query and retrieved document chunks
 decide if the chunks contain enough information to answer the query. Be strict - 
 if the chunks are only tangentially related, mark as not relevant. 
 """
+
+SECTION_TAG_PROMPT = """
+You are tagging a chunk of a document with the single section it most likely belongs to. 
+Choose Exactly one from this list:
+{sections}
+Reply with only the label text and nothing else. If none fit, reply 'Other'.
+"""
+
+METADATA_FILTER_PROMPT = """
+You map a user's question to the ONE document section that is most likely to contain the answer,
+so retrieval can be narrowed to that section. 
+Available sections are:
+{sections}
+
+Choose the single best matching section label when the question clearly concerns one topic area.
+Return null only if the question is too broad, spans many sections, or matches none of the sections.
+Prefer picking a section when there is a reasonable match.
+"""
