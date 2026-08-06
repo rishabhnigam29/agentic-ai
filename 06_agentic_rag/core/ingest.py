@@ -72,7 +72,7 @@ def ingest_document(file_path: str) -> int:
     ids = [f"chunk_{i}" for i in range(len(chunks))]
 
     print("Tagging each chunk with its section...")
-    sections = [tag_chunk_section(chunk, config.SECTIONS) for chunk in chunks]
+    sections = [tag_chunk_section(chunk, config.get_active_profile().sections) for chunk in chunks]
 
     metadata = [{"source": file_path , 
                  "embedding_model": config.EMBEDDING_MODEL,

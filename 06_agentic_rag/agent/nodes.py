@@ -101,8 +101,9 @@ def route_after_evalaute(state: AgentState) -> dict:
 
 def filter_node(state: AgentState)-> dict:
     """Decide whether to narrow retrieval to a specific section before searching."""
+    profile = config.get_active_profile()
     prompt = METADATA_FILTER_PROMPT.format(
-        sections="\n".join(f"- {s}" for s in config.SECTIONS))
+        sections="\n".join(f"- {s}" for s in profile.sections))
 
     decision: MetadataFilter = call_llm(
         messages=[{"role": "system","content": prompt,},
@@ -159,4 +160,17 @@ def full_scan_generate_node(state: AgentState) -> dict:
         temperature=0.0,
     )
 
+    return {"answer": analysis.render(), "analysis_report": analysis}
+
+def full_scan_generate_node(state: AgentState) -> dict:
+    """Audit the ENTIRE document and return a structured report of all issues found."""
+    profile = config.get_active_profile()
+    all_text = format_chunks_as_context(state["retrieved_chunks"])
+
+    analysis =  call_llm(
+        messages=[{"role": "system","content": profile.full_scan_prompt,},
+                  {"role": "user", "content": f"Here is complete document text:\n{all_text}"}],
+        response_model=profile.analysis_model,
+        temperature=0.0,
+    )
     return {"answer": analysis.render(), "analysis_report": analysis}

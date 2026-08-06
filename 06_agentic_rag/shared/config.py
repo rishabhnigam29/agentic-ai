@@ -21,6 +21,7 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 
 #------------------------------ Sample Policy Document ------------------------------#
 SAMPLE_POLICY = str(PACKAGE_DIR / "data" / "sample_policy.pdf")
+SAMPLE_LEASE = str(PACKAGE_DIR / "data" / "sample_lease.pdf")
 
 #------------------------------- Memory tunables ------------------------------#
 SUMMARIZE_EVERY_N_TURNS = 3
@@ -28,13 +29,5 @@ SUMMARIZE_EVERY_N_TURNS = 3
 #------------------------------- Retrieval tunables ------------------------------#
 MAX_RETRIEVAL_ATTEMPTS = 2
 
-SECTIONS =[
-    "Definations & General Provisions",
-    "Eligibility & Enrollment",
-    "Covered Services",
-    "Exclusions & Limitations",
-    "Claims & Appeals",
-    "Premium & Cost-Sharing",
-    "Miscellaneous Provisions",
-    "Other"
-]
+#------------------------------- Active Profile ------------------------------#
+ACTIVE_PROFILE = os.getenv("DOC_PROFILE", "medical_policy")
