@@ -103,13 +103,13 @@ def tag_chunk_section(text: str, sections: list[str]) -> str:
 
     for s in sections:
         if raw.lower() == s.lower():
-            return s
+            return s 
 
-        for s in sections:
-            if s.lower() in raw.lower() or raw.lower() in s.lower():
-                return s
+    for s in sections:
+        if s.lower() in raw.lower() or raw.lower() in s.lower():
+            return s 
 
-        return "Other"    
+    return "Other" 
 
 if __name__ == "__main__":
     # Example usage

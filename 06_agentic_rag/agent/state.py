@@ -7,6 +7,8 @@ from typing import Literal
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
 
+from shared.models import AuditResult
+
 from core.retriever import RetrievedChunk
 
 class AgentState(TypedDict):
@@ -19,6 +21,7 @@ class AgentState(TypedDict):
     memory_context: str
     conversation_history: list[dict]
     answer: str
+    analysis_report: AuditResult | None
 
 class RouteDecision(BaseModel):
     reasoning: str = Field(description="One sentence explaining the routing decision.")

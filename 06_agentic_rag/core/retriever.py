@@ -7,6 +7,14 @@ from litellm import embedding
 from shared import config
 from core.ingest import get_chroma_client, get_or_create_collection
 
+def format_chunks_as_context(chunks: list["RetrievedChunk"],
+                             seperator: str = "\n\n------\n\n") -> str:
+    """Format a list of retrieved chunks into a single string for LLM context"""
+    return seperator.join(
+        f"[chunk {c.metadata.get('chunk_index', '?')}]:\n{c.text}" 
+        for c in chunks
+    )
+
 @dataclass
 class RetrievedChunk:
     text: str

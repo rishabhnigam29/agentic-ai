@@ -6,8 +6,11 @@ from utils.llm_client import call_llm
 from shared.prompts import ROUTER_PROMPT, REWRITER_PROMPT, RELEVANCE_GRADER_PROMPT, METADATA_FILTER_PROMPT
 from agent.state import RouteDecision, AgentState, RelevanceGrade, MetadataFilter
 
-from core.retriever import ChromaRetriever
+from core.retriever import ChromaRetriever, RetrievedChunk, format_chunks_as_context
 from shared import config
+from shared.models import AnalysisResult
+
+from core.ingest import get_chroma_client, get_or_create_collection
 
 _retriever = None
 
@@ -128,3 +131,32 @@ def retrieve_node(state: AgentState) -> dict:
         chunks = retriever.search(search_query, top_k=5, where=None)
     attempts = state.get("retrieval_attempts", 0) + 1
     return {"retrieved_chunks": chunks, "retrieval_attempts": attempts}
+
+def full_scan_node(state: AgentState) -> dict:
+    """Load ALL chunks so the whole document can be analyzed. """
+    client = get_chroma_client()
+    collection = get_or_create_collection(client)
+    total = collection.count()
+    if total == 0:
+        return {"retrieved_chunks": []}
+
+    results = collection.get(include = ["documents", "metadatas"], limit=total)
+    documents = results["documents"] or []
+    metadatas = results["metadatas"] or []
+    chunks = [RetrievedChunk(text=doc, metadata=dict(meta)) 
+              for doc, meta in zip(documents, metadatas)]
+    chunks.sort(key=lambda c: c.metadata.get("chunk_index", 0))
+    return {"retrieved_chunks": chunks}
+
+def full_scan_generate_node(state: AgentState) -> dict:
+    """Audit the ENTIRE document and return a structured report of all issues found."""
+    all_text = format_chunks_as_context(state["retrieved_chunks"])
+
+    analysis =  call_llm(
+        messages=[{"role": "system","content": config.FULL_SCAN_ANALYSIS_PROMPT,},
+                  {"role": "user", "content": f"Here is complete document text:\n{all_text}"}],
+        response_model=AnalysisResult,
+        temperature=0.0,
+    )
+
+    return {"answer": analysis.render(), "analysis_report": analysis}
