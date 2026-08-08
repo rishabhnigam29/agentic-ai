@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from utils.llm_client import call_llm
-from shared.prompts import ROUTER_PROMPT, REWRITER_PROMPT, RELEVANCE_GRADER_PROMPT, METADATA_FILTER_PROMPT
+from shared.prompts import ROUTER_PROMPT, REWRITER_PROMPT, RELEVANCE_GRADER_PROMPT, METADATA_FILTER_PROMPT, FULL_SCAN_PROMPT
 from agent.state import RouteDecision, AgentState, RelevanceGrade, MetadataFilter
 
 from core.retriever import ChromaRetriever, RetrievedChunk, format_chunks_as_context
@@ -143,7 +143,7 @@ def full_scan_node(state: AgentState) -> dict:
     results = collection.get(include = ["documents", "metadatas"], limit=total)
     documents = results["documents"] or []
     metadatas = results["metadatas"] or []
-    chunks = [RetrievedChunk(text=doc, metadata=dict(meta)) 
+    chunks = [RetrievedChunk(text=doc,  score=1.0, metadata=dict(meta)) 
               for doc, meta in zip(documents, metadatas)]
     chunks.sort(key=lambda c: c.metadata.get("chunk_index", 0))
     return {"retrieved_chunks": chunks}
@@ -153,7 +153,7 @@ def full_scan_generate_node(state: AgentState) -> dict:
     all_text = format_chunks_as_context(state["retrieved_chunks"])
 
     analysis =  call_llm(
-        messages=[{"role": "system","content": config.FULL_SCAN_ANALYSIS_PROMPT,},
+        messages=[{"role": "system","content": FULL_SCAN_PROMPT,},
                   {"role": "user", "content": f"Here is complete document text:\n{all_text}"}],
         response_model=AnalysisResult,
         temperature=0.0,
