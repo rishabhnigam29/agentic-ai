@@ -24,7 +24,7 @@ SAMPLE_POLICY = str(PACKAGE_DIR / "data" / "sample_policy.pdf")
 SAMPLE_LEASE = str(PACKAGE_DIR / "data" / "sample_lease.pdf")
 
 #------------------------------- Memory tunables ------------------------------#
-SUMMARIZE_EVERY_N_TURNS = 3
+SUMMARIZE_EVERY_N_TURNS = 6
 
 #------------------------------- Retrieval tunables ------------------------------#
 MAX_RETRIEVAL_ATTEMPTS = 2

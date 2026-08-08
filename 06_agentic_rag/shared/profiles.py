@@ -10,7 +10,7 @@ from pydantic import Field
 
 from shared import config
 from shared.models import AuditFinding, AuditResult, AnalysisResult
-from shared.prompts import ANALYST_PROMPT, FULL_SCAN_PROMPT, LEASE_ANALYST_PROMPT, LEASE_FULL_SCAN_PROMPT
+from shared.prompts import ANALYST_PROMPT, ANALYST_STAGE_B_PROMPT, FULL_SCAN_PROMPT, LEASE_ANALYST_PROMPT, LEASE_FULL_SCAN_PROMPT
 
 @dataclass(frozen=True)
 class DocProfile:
@@ -44,7 +44,7 @@ POLICY_PROFILE = DocProfile(
     sample_path=config.SAMPLE_POLICY,
     sections=POLICY_SECTIONS,
     analysis_model=AnalysisResult,
-    analyst_prompt=ANALYST_PROMPT,
+    analyst_prompt=ANALYST_STAGE_B_PROMPT,
     full_scan_prompt=FULL_SCAN_PROMPT
 )
 

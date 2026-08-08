@@ -43,15 +43,24 @@ When unsure between 'docs' and 'direct', choose 'docs'.
 """
 
 REWRITER_PROMPT = """
-Rewrite the user's question into a concise, keyword-rich search query optimised
+Your rewrite the user question into a STANDALONE search quert for  a document search.
+Use the conversation history to fill in whatever the question leaves implicit like 
+pronoun, that, those and followup. The rewrittent query must stand on its own,
+with no refernce back to earlier turns. When the user changes the question with the followup
+like 'and what about X', keep what was asked in previous tuends and swap subject to X.
+Do not carry the older subject as well
+Keep it concise, keyword-rich search query optimised
 for finding the relevant sections in a document. Return ONLY the rewritten query,
 nothing else
 """
 
 RELEVANCE_GRADER_PROMPT = """
 You are a relevance grader. Given the user's query and retrieved document chunks,
-decide if the chunks contain enough information to answer the query. Be strict - 
-if the chunks are only tangentially related, mark as not relevant. 
+decide if the chunks contain enough information to answer the query. 
+Mark relevant=True if the answer is present ANYWHERE in the chunks, even if it is 
+single line buried in unrelated text and even if only part of query is covered.
+Mark relevant=False if the answer is NOT present in the chunks and a different search
+is required.
 """
 
 SECTION_TAG_PROMPT = """
@@ -62,14 +71,14 @@ Reply with only the label text and nothing else. If none fit, reply 'Other'.
 """
 
 METADATA_FILTER_PROMPT = """
-You map a user's question to the ONE document section that is most likely to contain the answer,
-so retrieval can be narrowed to that section. 
+You map a search query to the document section that is most likely to contain the answer,
+so retrieval can be narrowed to those section. 
 Available sections are:
 {sections}
 
-Choose the single best matching section label when the question clearly concerns one topic area.
-Return null only if the question is too broad, spans many sections, or matches none of the sections.
-Prefer picking a section when there is a reasonable match.
+Return AT MOST TWO best matching section label, copied wxactly from the list.
+Pick two when the answer could be in either section
+Return empty list if the query is too broad, spans too or more sections, or matches none of the sections.
 """
 
 FULL_SCAN_PROMPT = """

@@ -21,6 +21,7 @@ class AgentState(TypedDict):
     memory_context: str
     conversation_history: list[dict]
     answer: str
+    metadata_filter: MetadataFilter | None
     analysis_report: AuditResult | None
 
 class RouteDecision(BaseModel):
@@ -41,5 +42,5 @@ class RelevanceGrade(BaseModel):
 
 class MetadataFilter(BaseModel):
     reasoning: str = Field(description="Why this section(or None) was chosen")
-    section: str | None = Field(default=None, 
-                                description="The exact section label to filter on, or null to search everything")
+    sections: list[str] = Field(default_factory=list, 
+                                description="Atmost two exact section labels to filter on. Empty lust to search in whole document.")
