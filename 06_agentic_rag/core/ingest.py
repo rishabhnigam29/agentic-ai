@@ -8,6 +8,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from shared import config
 from shared.prompts import SECTION_TAG_PROMPT
+from shared.profiles import get_active_profile
 
 from utils.llm_client import call_llm
 
@@ -72,7 +73,7 @@ def ingest_document(file_path: str) -> int:
     ids = [f"chunk_{i}" for i in range(len(chunks))]
 
     print("Tagging each chunk with its section...")
-    sections = [tag_chunk_section(chunk, config.get_active_profile().sections) for chunk in chunks]
+    sections = [tag_chunk_section(chunk, get_active_profile().sections) for chunk in chunks]
 
     metadata = [{"source": file_path , 
                  "embedding_model": config.EMBEDDING_MODEL,

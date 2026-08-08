@@ -9,6 +9,7 @@ from agent.state import RouteDecision, AgentState, RelevanceGrade, MetadataFilte
 from core.retriever import ChromaRetriever, RetrievedChunk, format_chunks_as_context
 from shared import config
 from shared.models import AnalysisResult
+from shared.profiles import get_active_profile
 
 from core.ingest import get_chroma_client, get_or_create_collection
 
@@ -101,7 +102,7 @@ def route_after_evalaute(state: AgentState) -> dict:
 
 def filter_node(state: AgentState)-> dict:
     """Decide whether to narrow retrieval to a specific section before searching."""
-    profile = config.get_active_profile()
+    profile = get_active_profile()
     prompt = METADATA_FILTER_PROMPT.format(
         sections="\n".join(f"- {s}" for s in profile.sections))
 
@@ -164,7 +165,7 @@ def full_scan_generate_node(state: AgentState) -> dict:
 
 def full_scan_generate_node(state: AgentState) -> dict:
     """Audit the ENTIRE document and return a structured report of all issues found."""
-    profile = config.get_active_profile()
+    profile = get_active_profile()
     all_text = format_chunks_as_context(state["retrieved_chunks"])
 
     analysis =  call_llm(

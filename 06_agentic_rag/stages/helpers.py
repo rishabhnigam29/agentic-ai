@@ -3,6 +3,7 @@
 from core.ingest import get_chroma_client, get_or_create_collection, ingest_document
 from core.retriever import ChromaRetriever, RetrievedChunk
 from shared import config
+from shared.profiles import get_active_profile
 
 
 def ensure_ingested()-> None:
@@ -10,7 +11,7 @@ def ensure_ingested()-> None:
     collection = get_or_create_collection(client)
     if collection.count() == 0:
         print("First run - ingesting documents...")
-        ingest_document(config.SAMPLE_POLICY)
+        ingest_document(get_active_profile().sample_path)
         print("Documents ingested.")
 
 def format_sources(chunks: list[RetrievedChunk]) -> str:
