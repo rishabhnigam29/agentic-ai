@@ -1,17 +1,16 @@
 """Shared helpers for the stage runners"""
 
-from core.ingest import get_chroma_client, get_or_create_collection, ingest_document
+from core.ingest import get_vectorstore, ingest_document
 from core.retriever import ChromaRetriever, RetrievedChunk
 from shared import config
 from shared.profiles import get_active_profile
 
 
 def ensure_ingested()-> None:
-    client = get_chroma_client()
-    collection = get_or_create_collection(client)
-    if collection.count() == 0:
+    if not get_vectorstore().get(limit=1)["ids"]:
+        profile = get_active_profile()
         print("First run - ingesting documents...")
-        ingest_document(get_active_profile().sample_path)
+        ingest_document(profile.sample_path)
         print("Documents ingested.")
 
 def format_sources(chunks: list[RetrievedChunk]) -> str:

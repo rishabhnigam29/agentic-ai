@@ -9,8 +9,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from shared import config
 from shared.prompts import SECTION_TAG_PROMPT
 from shared.profiles import get_active_profile
+from shared.embeddings import LiteLLMEmbeddings
 
 from utils.llm_client import call_llm
+
+from langchain_core.documents import Document
+from langchain_chroma import Chroma
 
 def load_document(file_path: str) -> str:
     """Load a document from a file path."""
@@ -50,8 +54,25 @@ def get_or_create_collection(client: ClientAPI) -> chromadb.Collection:
     return client.get_or_create_collection(name=config.COLLECTION_NAME,
                                         metadata={"hnsw:space": "cosine"},
                                             )
+#One vectorstore per document profile (e.g. rental_lease, privacy_policy, etc.)
+_vectorstore:dict[str, Chroma] = {}
+
+def get_vectorstore() -> Chroma:
+    name = get_active_profile().collection_name
+    if name not in _vectorstore:
+        _vectorstore[name] = Chroma(
+            client=get_chroma_client(),
+            collection_name=name,
+            embedding_function=LiteLLMEmbeddings(),
+            collection_metadata={"hnsw:space": "cosine"},
+        )
+    return _vectorstore[name]
 
 def ingest_document(file_path: str) -> int:
+
+    profile = get_active_profile()
+    file_path = file_path or profile.sample_path
+
     print(f"Loading document from {file_path}...")
     text = load_document(file_path)
     print(f"Document length: {len(text)} characters.")
@@ -59,34 +80,35 @@ def ingest_document(file_path: str) -> int:
     chunks = chunk_text(text)
     print(f"Created {len(chunks)} chunks.")
 
-    print("Generating embeddings...")
-    vectors = get_embeddings(chunks)
-
-    client = get_chroma_client()
-    collection = get_or_create_collection(client)
-
-    existing = collection.count()
-    if existing > 0:
-        print(f" Clearing {existing} existing chunks (re-ingest)")
-        collection.delete(ids=collection.get()["ids"])
-
-    ids = [f"chunk_{i}" for i in range(len(chunks))]
-
     print("Tagging each chunk with its section...")
     sections = [tag_chunk_section(chunk, get_active_profile().sections) for chunk in chunks]
 
-    metadata = [{"source": file_path , 
-                 "embedding_model": config.EMBEDDING_MODEL,
-                 "section": sections[i],
-                 "chunk_index": i} for i in range(len(chunks))]
-    
-    collection.add(
-        ids=ids,
-        embeddings=vectors,
-        documents=chunks,
-        metadatas=metadata,
+    documents = [
+        Document(page_content=chunks[i], 
+                 metadata={
+                     "source": file_path,
+                     "embedding_model": config.EMBEDDING_MODEL,
+                     "section": sections[i],
+                     "chunk_index": i
+                 }
+                 ) 
+                 for i in range(len(chunks))
+                 ]
+
+    vectorstore = get_vectorstore()
+
+    existing = vectorstore.get()["ids"]
+    if existing:
+        print(f"Found {len(existing)} existing chunks in ChromaDB collection '{config.COLLECTION_NAME}'. Deleting them...")
+        vectorstore.delete(ids=existing)
+
+    print(f"Embedding and storing {len(chunks)} chunks in ChromaDB collection '{config.COLLECTION_NAME}'...")
+    vectorstore.add_documents(
+        documents,
+        ids=[f"chunk_{i}" for i in range(len(documents))],
     )
-    print(f" Stored {len(chunks)} chunks in ChromaDB collection '{config.COLLECTION_NAME}'.")
+
+    print(f"Stored {len(documents)} chunks in '{profile.collection_name}' collection.")
     return len(chunks)
 
 def tag_chunk_section(text: str, sections: list[str]) -> str:
