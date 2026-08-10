@@ -1,15 +1,17 @@
 """Stage A - Basic RAG: question-> retrieve-> augment prompt-> answer"""
 
-from core.retriever import ChromaRetriever, RetrievedChunk
+from core.retriever import search, format_chunks_as_context
 from utils.llm_client import call_llm
 from utils.tracing import setup_tracing, traceable
 from stages.helpers import ensure_ingested, format_sources
 from shared.prompts import ANALYST_STAGE_A_PROMPT
 
+from langchain_core.documents import Document
+
 @traceable(NAME="RAG Retrieval")
-def retrieve(retriever: ChromaRetriever, question: str, top_k: int = 5) -> list[RetrievedChunk]:
+def retrieve(question: str, top_k: int = 5) -> list[Document]:
    """Child Span : embed the question and pull the top-k chunks from chromaDb"""
-   return retriever.search(question, top_k=top_k)
+   return search(question, top_k=top_k)
 
 @traceable(NAME="RAG Generation")
 def generate(question: str, context: str)-> str:
@@ -23,11 +25,11 @@ def generate(question: str, context: str)-> str:
     )
 
 @traceable(NAME="RAG Query")
-def rag_query(retriever: ChromaRetriever, question: str) -> str:
-    chunks = retrieve(retriever, question)
-    
+def rag_query(question: str) -> str:
+    chunks = retrieve(question)
+
     context = "\n\n ----- \n\n".join(
-        f"[Chunk {c.metadata.get('chunk_index', '?')}]:\n{c.text}"
+        f"[Chunk {c.metadata.get('chunk_index', '?')}]:\n{c.page_content}"
         for c in chunks
     )
 
@@ -45,7 +47,6 @@ def main() -> None:
     print("="*60)
 
     ensure_ingested()
-    retriever = ChromaRetriever()
 
     while True:
         try:
@@ -61,7 +62,7 @@ def main() -> None:
             break
 
         print("\n Retrieving relevant information...")
-        answer = rag_query(retriever, question)
+        answer = rag_query(question)
         print("\n Assistant:", answer)
 
 if __name__ == "__main__":

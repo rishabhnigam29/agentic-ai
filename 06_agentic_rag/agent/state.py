@@ -9,13 +9,13 @@ from pydantic import BaseModel, Field
 
 from shared.models import AuditResult
 
-from core.retriever import RetrievedChunk
+from langchain_core.documents import Document
 
 class AgentState(TypedDict):
     query: str
     route: str
     rewritten_query: str
-    retrieved_chunks: list[RetrievedChunk]
+    retrieved_chunks: list[Document]
     chunks_relevant: bool
     retrieval_attempts: int
     memory_context: str

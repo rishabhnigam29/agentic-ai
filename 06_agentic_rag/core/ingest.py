@@ -49,11 +49,6 @@ def get_chroma_client() -> ClientAPI:
         return chromadb.HttpClient(host=config.CHROMA_HOST, port=config.CHROMA_PORT)
     return chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
 
-def get_or_create_collection(client: ClientAPI) -> chromadb.Collection:
-    """Get or create a ChromaDB collection."""
-    return client.get_or_create_collection(name=config.COLLECTION_NAME,
-                                        metadata={"hnsw:space": "cosine"},
-                                            )
 #One vectorstore per document profile (e.g. rental_lease, privacy_policy, etc.)
 _vectorstore:dict[str, Chroma] = {}
 

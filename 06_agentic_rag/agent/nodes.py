@@ -6,23 +6,18 @@ from utils.llm_client import call_llm
 from shared.prompts import ROUTER_PROMPT, REWRITER_PROMPT, RELEVANCE_GRADER_PROMPT, METADATA_FILTER_PROMPT, FULL_SCAN_PROMPT
 from agent.state import RouteDecision, AgentState, RelevanceGrade, MetadataFilter
 
-from core.retriever import ChromaRetriever, RetrievedChunk, format_chunks_as_context
+from core.retriever import search, format_chunks_as_context
 from shared import config
 from shared.models import AnalysisResult
 from shared.profiles import get_active_profile
 
-from core.ingest import get_chroma_client, get_or_create_collection
+from core.ingest import get_vectorstore
 from core.memory import ConversationMemory
 from shared.profiles import get_active_profile
 
-_retriever = None
-_memory: ConversationMemory | None = None
+from langchain_core.documents import Document
 
-def _get_retriever():
-    global _retriever
-    if _retriever is None:
-        _retriever = ChromaRetriever()
-    return _retriever
+_memory: ConversationMemory | None = None
 
 def _get_memory() -> ConversationMemory:
     global _memory
@@ -82,17 +77,10 @@ def rewrite_node(state: AgentState) -> dict:
     )
     return {"rewritten_query": rewritten.strip()}
 
-def retrieve_node(state: AgentState) -> dict:
-    """Retrieve relevant document chunks from the document store"""
-    retriever = _get_retriever()
-    search_query = state.get("rewritten_query") or state["query"]
-    chunks = retriever.search(search_query, top_k=5)
-    attempts = state.get("retrieval_attempts", 0) + 1
-    return {"retrieved_chunks": chunks, "retrieval_attempts": attempts}
 
 def evaluate_node(state: AgentState) -> dict:
     """LLM judges whether the retrieved chunks actually answer the query."""
-    chunks_text = "\n\n------\n\n".join(c.text for c in state["retrieved_chunks"])
+    chunks_text = "\n\n------\n\n".join(c.page_content for c in state["retrieved_chunks"])
 
     graded_query = state.get("rewritten_query") or state["query"]
     grade: RelevanceGrade = call_llm(
@@ -137,7 +125,6 @@ def filter_node(state: AgentState)-> dict:
 
 def retrieve_node(state: AgentState) -> dict:
     """Retrieve chunks from the document store, narrowed by the section filter."""
-    retriever = _get_retriever()
     search_query = state.get("rewritten_query") or state["query"]
 
     mfilter = state.get("metadata_filter")
@@ -151,26 +138,19 @@ def retrieve_node(state: AgentState) -> dict:
         where_clause =  None
 
 
-    chunks = retriever.search(search_query, top_k=5, where=where_clause)
+    chunks = search(search_query, top_k=5, where=where_clause)
     if where_clause and not chunks:
         # Filter was too narrow - fall back to searching everything
-        chunks = retriever.search(search_query, top_k=5, where=None)
+        chunks = search(search_query, top_k=5, where=None)
     attempts = state.get("retrieval_attempts", 0) + 1
     return {"retrieved_chunks": chunks, "retrieval_attempts": attempts}
 
 def full_scan_node(state: AgentState) -> dict:
     """Load ALL chunks so the whole document can be analyzed. """
-    client = get_chroma_client()
-    collection = get_or_create_collection(client)
-    total = collection.count()
-    if total == 0:
-        return {"retrieved_chunks": []}
-
-    results = collection.get(include = ["documents", "metadatas"], limit=total)
-    documents = results["documents"] or []
-    metadatas = results["metadatas"] or []
-    chunks = [RetrievedChunk(text=doc,  score=1.0, metadata=dict(meta)) 
-              for doc, meta in zip(documents, metadatas)]
+    data = get_vectorstore().get()
+    
+    chunks = [Document(text=doc,  score=1.0, metadata=dict(meta)) 
+              for doc, meta in zip(data["documents"], data["metadatas"])]
     chunks.sort(key=lambda c: c.metadata.get("chunk_index", 0))
     return {"retrieved_chunks": chunks}
 
@@ -214,7 +194,7 @@ def generate_node(state: AgentState) -> dict:
 
     if state.get("retrieved_chunks"):
         doc_context = "\n\n".join(
-            f"[Chunk {c.metadata.get('chunk_index', '?')}] (relevance {c.score:.2f}): \n{c.text}" 
+            f"[Chunk {c.metadata.get('chunk_index', '?')}] (relevance {c.metadata.get('score',1.0):.2f}): \n{c.page_content}" 
             for c in state["retrieved_chunks"]
         )
         context_parts.append(f"Document Excerts:\n{doc_context}")

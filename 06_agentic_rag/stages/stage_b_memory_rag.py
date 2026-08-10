@@ -1,7 +1,7 @@
 """Stage B - RAG + Memory: Doc retrieval + short-term + long term memory"""
 
 from core.memory import ConversationMemory
-from core.retriever import ChromaRetriever
+from core.retriever import search, format_chunks_as_context
 from utils.llm_client import call_llm
 from utils.tracing import setup_tracing, traceable
 from stages.helpers import ensure_ingested, format_sources
@@ -17,14 +17,14 @@ def generate(messages: list[dict]) -> str:
     )
 
 @traceable(name="rag_query_with_memory")
-def rag_query_with_memory(retriever: ChromaRetriever, memory: ConversationMemory, question: str) -> str:
+def rag_query_with_memory(memory: ConversationMemory, question: str) -> str:
     """Child Span : retrieve relevant chunks and generate an answer using the LLM with memory context"""
     # Retrieve relevant chunks from the document
-    chunks = retriever.search(question, top_k=5)
+    chunks = search(question, top_k=5)
     
     # Format the retrieved chunks for context
     context = "\n\n ----- \n\n".join(
-        f"[Chunk {c.metadata.get('chunk_index', '?')}]:\n{c.text}"
+        f"[Chunk {c.metadata.get('chunk_index', '?')}]:\n{c.page_content}"
         for c in chunks
     )
 
@@ -63,7 +63,6 @@ def main() -> None:
     print("="*60)
 
     ensure_ingested()
-    retriever = ChromaRetriever()
     memory = ConversationMemory(window_size=10)
 
     while True:
@@ -84,7 +83,7 @@ def main() -> None:
             continue
 
         print("\n Retrieving relevant information...")
-        answer = rag_query_with_memory(retriever, memory, question)
+        answer = rag_query_with_memory(memory, question)
         print("\n Assistant:", answer)
 
         memory.add_turn("user", question)
