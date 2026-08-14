@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.memory import InMemorySaver
 
 from agent.state import AgentState
 from agent.nodes import (
@@ -63,4 +64,4 @@ def build_graph() -> StateGraph:
     return graph
 
 def compile_graph():
-    return build_graph().compile()
+    return build_graph().compile(checkpointer=InMemorySaver())

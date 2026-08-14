@@ -2,12 +2,9 @@
 
 from utils.tracing import setup_tracing
 
-from core.memory import ConversationMemory
 from agent.graph import compile_graph
-from agent.nodes import set_memory
 from stages.helpers import ensure_ingested
 from shared.profiles import get_active_profile
-from shared import config
 
 ROUTE_LABELS = {
     "docs": "Search the document (targeted retrieval)",
@@ -16,15 +13,16 @@ ROUTE_LABELS = {
     "full_scan": "Full scan of all documents (loading ALL chunks for comprehensive analysis)",
 }
 
-def run_agent(app, query:str, memory: ConversationMemory) -> str:
+def run_agent(app, query:str, thread_id: str) -> str:
     """Run the LangGraph agent and print the decision path"""
-    conversation_memory = memory.get_recent_context(k=6)
     result = app.invoke({
         "query": query, "route": "", "rewritten_query": "", "metadata_filter": None, 
         "retrieved_chunks" : [], "chunks_relevant": False, "retrieval_attempts": 0,
-        "memory_context": [], "conversation_history": conversation_memory,
+        "memory_context": [],
         "answer": "", "analysis_result": None,
-    })
+    },
+    config={"configurable": {"thread_id": thread_id}}
+    )
 
     route = result.get("route", "unknown")
     rewritten = result.get("rewritten_query", "")
@@ -65,9 +63,9 @@ def main() -> None:
 
     ensure_ingested()
 
-    memory = ConversationMemory(window_size=10)
-    set_memory(memory)
     app = compile_graph()
+
+    session = 1
 
     turn_counter = 1
     while True:
@@ -76,24 +74,13 @@ def main() -> None:
             print("Exiting the agentic RAG stage.")
             break
         elif user_input.lower() == "clear":
-            memory.clear()
-            print("Conversation memory cleared.")
+            session += 1
+            print("Memory cleared (started a new thread).")
             continue
 
         print(f"\nProcessing your query....")    
-        answer = run_agent(app, user_input, memory)
+        answer = run_agent(app, user_input, thread_id=f"cli-session-{session}")
         print(f"\nAgent's Answer:\n{answer}")
-
-        memory.add_turn("user", user_input)
-        memory.add_turn("assistant", answer)
-        turn_counter += 1
-
-        if turn_counter % config.SUMMARIZE_EVERY_N_TURNS == 0 and turn_counter > 1:
-            print("\nSummarizing conversation memory...")
-            summary = memory.summarize_and_store()
-            if summary:
-                print(f"Summary stored in memory: {summary[:80]}")
-            memory.clear_short_term_memory()
 
 if __name__ == "__main__":
     main()

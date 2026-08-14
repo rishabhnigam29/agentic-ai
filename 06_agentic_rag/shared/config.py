@@ -14,7 +14,6 @@ CHROMA_PERSIST_DIR = str(PACKAGE_DIR / "chroma_db")
 CHROMA_HOST = os.getenv("CHROMA_HOST")
 CHROMA_PORT = int(os.getenv("CHROMA_PORT", 8000))
 COLLECTION_NAME = "policy_docs"
-MEMORY_COLLECTION_NAME = "conversation_memory"
 
 #------------------------------- Embedding Model ------------------------------#
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
@@ -22,11 +21,8 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 #------------------------------ Sample Policy Document ------------------------------#
 SAMPLE_POLICY = str(PACKAGE_DIR / "data" / "sample_policy.pdf")
 SAMPLE_LEASE = str(PACKAGE_DIR / "data" / "sample_lease.pdf")
-
-#------------------------------- Memory tunables ------------------------------#
-SUMMARIZE_EVERY_N_TURNS = 6
-
 #------------------------------- Retrieval tunables ------------------------------#
+
 MAX_RETRIEVAL_ATTEMPTS = 2
 
 #------------------------------- Active Profile ------------------------------#

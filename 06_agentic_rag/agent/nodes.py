@@ -12,22 +12,9 @@ from shared.models import AnalysisResult
 from shared.profiles import get_active_profile
 
 from core.ingest import get_vectorstore
-from core.memory import ConversationMemory
 from shared.profiles import get_active_profile
 
 from langchain_core.documents import Document
-
-_memory: ConversationMemory | None = None
-
-def _get_memory() -> ConversationMemory:
-    global _memory
-    if _memory is None:
-        _memory = ConversationMemory()
-    return _memory
-
-def set_memory(memory: ConversationMemory) -> None:
-    global _memory
-    _memory = memory
 
 def router_node(state: AgentState) -> dict:
     """Classify whether the query needs doc retrieval, memory or direct answer."""
@@ -179,13 +166,24 @@ def full_scan_generate_node(state: AgentState) -> dict:
         response_model=profile.analysis_model,
         temperature=0.0,
     )
-    return {"answer": analysis.render(), "analysis_report": analysis}
+    return {
+        "answer": analysis.render(), 
+        "analysis_report": analysis,
+        "conversation_history" : [
+                    {"role": "system", "content": state["query"]},
+                    {"role": "assistant", "content": answer},
+                    ],
+        }
 
 def memory_lookup_node(state: AgentState) -> dict:
-    """Pull relevant past conversation context from long term memory."""
-    memory = _get_memory()
-    relevant_context = memory.get_relevant_memory(state["query"],top_k=3)
-    return {"memory_context": relevant_context}
+    """Pull relevant past conversation context from the checkpointed thread.
+    
+    The checkpointer keeps whole conversation in statae, so recall is just
+    reading it back - no seperate memory store to query.
+    """
+    history = state.get("conversation_history", [])
+    snippets = [f"{m['role']}: {m['content']}" for m in history[-20:]]
+    return {"memory_context": snippets}
 
 def generate_node(state: AgentState) -> dict:
     """Produce the final answer using all available context"""
@@ -210,7 +208,14 @@ def generate_node(state: AgentState) -> dict:
                 *history[-6:],
                 {"role": "user", "content": state["query"]}]
     answer: str = call_llm(messages=messages, temperature=0.0)
-    return {"answer": answer}
+    
+    return {
+        "answer": answer,
+        "conversation_history" : [
+            {"role": "system", "content": state["query"]},
+            {"role": "assistant", "content": answer},
+            ],
+        }
 
 def route_after_router(state: AgentState) -> dict:
     return state["route"]

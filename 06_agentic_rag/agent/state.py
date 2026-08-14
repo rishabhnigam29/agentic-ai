@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Annotated
+import operator
 
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
@@ -19,7 +20,7 @@ class AgentState(TypedDict):
     chunks_relevant: bool
     retrieval_attempts: int
     memory_context: str
-    conversation_history: list[dict]
+    conversation_history: Annotated[list[dict], operator.add]
     answer: str
     metadata_filter: MetadataFilter | None
     analysis_report: AuditResult | None
