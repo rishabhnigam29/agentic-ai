@@ -3,6 +3,7 @@ __pycache__
 .gitignore
 uv.lock
 .env
-.env
 chroma_db
 .langgraph_api
+.chainlit
+.files

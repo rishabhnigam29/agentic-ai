@@ -41,7 +41,7 @@ def build_graph() -> StateGraph:
                                    "docs": "rewrite",
                                     "memory": "memory_lookup",
                                     "direct": "generate",
-                                    "full_scan": "full_scan_generate",
+                                    "full_scan": "full_scan",
                                },
     )
 

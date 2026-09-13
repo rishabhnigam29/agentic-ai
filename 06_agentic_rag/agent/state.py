@@ -24,6 +24,7 @@ class AgentState(TypedDict):
     answer: str
     metadata_filter: MetadataFilter | None
     analysis_report: AuditResult | None
+    answer: str
 
 class RouteDecision(BaseModel):
     reasoning: str = Field(description="One sentence explaining the routing decision.")

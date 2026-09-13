@@ -12,7 +12,6 @@ from shared.models import AnalysisResult
 from shared.profiles import get_active_profile
 
 from core.ingest import get_vectorstore
-from shared.profiles import get_active_profile
 
 from langchain_core.documents import Document
 
@@ -136,28 +135,14 @@ def full_scan_node(state: AgentState) -> dict:
     """Load ALL chunks so the whole document can be analyzed. """
     data = get_vectorstore().get()
     
-    chunks = [Document(text=doc,  score=1.0, metadata=dict(meta)) 
+    chunks = [Document(page_content=doc,  score=1.0, metadata=dict(meta)) 
               for doc, meta in zip(data["documents"], data["metadatas"])]
     chunks.sort(key=lambda c: c.metadata.get("chunk_index", 0))
     return {"retrieved_chunks": chunks}
 
 def full_scan_generate_node(state: AgentState) -> dict:
     """Audit the ENTIRE document and return a structured report of all issues found."""
-    all_text = format_chunks_as_context(state["retrieved_chunks"])
     profile = get_active_profile()
-
-    analysis =  call_llm(
-        messages=[{"role": "system","content": profile.full_scan_prompt,},
-                  {"role": "user", "content": f"Here is complete document text:\n{all_text}"}],
-        response_model=AnalysisResult,
-        temperature=0.0,
-    )
-
-    return {"answer": analysis.render(), "analysis_report": analysis}
-
-def full_scan_generate_node(state: AgentState) -> dict:
-    """Audit the ENTIRE document and return a structured report of all issues found."""
-    profile = config.get_active_profile()
     all_text = format_chunks_as_context(state["retrieved_chunks"])
 
     analysis =  call_llm(
@@ -171,7 +156,7 @@ def full_scan_generate_node(state: AgentState) -> dict:
         "analysis_report": analysis,
         "conversation_history" : [
                     {"role": "system", "content": state["query"]},
-                    {"role": "assistant", "content": answer},
+                    {"role": "assistant", "content": analysis.render()},
                     ],
         }
 
@@ -192,7 +177,7 @@ def generate_node(state: AgentState) -> dict:
 
     if state.get("retrieved_chunks"):
         doc_context = "\n\n".join(
-            f"[Chunk {c.metadata.get('chunk_index', '?')}] (relevance {c.metadata.get('score',1.0):.2f}): \n{c.page_content}" 
+            f"[Section: {c.metadata.get('section', '?')}] (relevance {c.metadata.get('score',1.0):.2f}): \n{c.page_content}" 
             for c in state["retrieved_chunks"]
         )
         context_parts.append(f"Document Excerts:\n{doc_context}")
